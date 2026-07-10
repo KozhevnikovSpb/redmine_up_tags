@@ -72,7 +72,7 @@ module RedmineupTags
                 name: 'tags',
                 action: :plugin,
                 partial: 'projects/settings/tags',
-                label: 'Tag Clouds'
+                label: :tag_clouds
               }
             end
             tabs
