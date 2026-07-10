@@ -1,0 +1,32 @@
+<h3>Tag Clouds</h3>
+
+<p><strong>Tag Clouds management is under development.</strong></p>
+
+<% if defined?(@tag_clouds) && @tag_clouds.any? %>
+  <table class="list">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @tag_clouds.each do |cloud| %>
+        <tr>
+          <td><%= h cloud.name %></td>
+          <td>
+            <% if defined?(@project) && @project %>
+              <%= link_to 'Edit', edit_project_tag_cloud_path(@project, cloud) %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No tag clouds yet.</p>
+<% end %>
+
+<% if defined?(@project) && @project %>
+  <%= link_to 'New Tag Cloud', new_project_tag_cloud_path(@project), class: 'icon icon-add' %>
+<% end %>
