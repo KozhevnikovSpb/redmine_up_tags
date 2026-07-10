@@ -43,24 +43,24 @@ module RedmineupTags
         end
 
         def available_filters_with_redmine_tags
-          available_filters_without_redmine_tags
-          selected_tags = []
-          if filters['issue_tags'].present?
-            selected_tags = Issue.all_tags(
-              project: project,
-              user: User.current,
-              open_only: RedmineupTags.settings['issues_open_only'].to_i == 1
-            ).where(name: filters['issue_tags'][:values]).map { |tag| [tag.name, tag.name] }
-          end
+          available = available_filters_without_redmine_tags
+          selected_tags = Array(filters.dig('issue_tags', :values))
+                               .reject(&:blank?)
+                               .uniq
+                               .map { |name| [name, name] }
+
           add_available_filter('issue_tags', type: :issue_tags, name: l(:tags), values: selected_tags)
+          available
         rescue StandardError => e
           Rails.logger.warn("[redmineup_tags] Tag filter error: #{e.class}: #{e.message}")
+          available || @available_filters || {}
         end
 
         def build_from_params_with_redmine_tags(params, defaults = {})
           build_from_params_without_redmine_tags(params, defaults)
           tag = Redmineup::Tag.find_by(id: params[:tag_id]) if params[:tag_id].present?
           add_filter('issue_tags', '=', [tag.name]) if tag
+          self
         end
       end
     end
