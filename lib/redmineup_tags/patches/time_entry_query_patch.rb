@@ -33,7 +33,7 @@ module RedmineupTags
 
           compare = operator.include?('!') ? 'NOT IN' : 'IN'
           clauses << ' AND ' unless clauses.empty?
-          clauses << "(#{TimeEntry.table_name}.issue_id #{compare} (#{issues.select(:id).to_sql}))"
+          clauses << "(#{TimeEntry.table_name}.issue_id #{compare} (#{tagged_issue_ids_sql(issues)}))"
           clauses
         ensure
           filters['issue_tags'] = filter if filter
@@ -48,6 +48,20 @@ module RedmineupTags
                                  .map { |tag| [tag.name, tag.name] }
           end
           add_available_filter('issue_tags', type: :issue_tags, name: l(:tags), values: selected_tags)
+        end
+
+        private
+
+        def tagged_issue_ids_sql(issues)
+          if issues.respond_to?(:reselect) && issues.respond_to?(:to_sql)
+            return issues.reselect("#{Issue.table_name}.id").to_sql
+          end
+
+          ids = Array(issues).filter_map do |issue|
+            issue.respond_to?(:id) ? issue.id : issue
+          end.map(&:to_i).uniq
+
+          (ids.presence || [0]).join(',')
         end
       end
     end
