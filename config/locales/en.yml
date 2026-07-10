@@ -46,6 +46,7 @@ en:
   label_new_tag_cloud: New Tag Cloud
   label_edit_tag_cloud: Edit Tag Cloud
   label_default_tag_cloud: Default Tags
+  label_hidden_tag_clouds: Hidden tag clouds
   label_tag_cloud_name: Name
   label_tag_cloud_filters: Filters
   label_tag_cloud_status_filter: Status filter
