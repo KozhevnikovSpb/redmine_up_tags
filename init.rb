@@ -71,7 +71,7 @@ module RedmineupTags
               tabs << {
                 name: 'tags',
                 action: :plugin,
-                partial: 'tags/settings',
+                partial: 'projects/settings/tags',
                 label: 'Tag Clouds'
               }
             end
