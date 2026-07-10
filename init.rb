@@ -44,7 +44,7 @@ Redmine::Plugin.register :redmineup_tags do
     tags_suggestion_order: 'name'
   }, partial: 'tags/settings'
 
-  # Permissions
+  # Permissions for Tag Clouds
   project_module :tags do
     permission :manage_tag_clouds, {
       tag_clouds: [:index, :new, :create, :edit, :update, :destroy]
@@ -57,24 +57,36 @@ Redmine::Plugin.register :redmineup_tags do
   menu :admin_menu, :tags, { controller: 'settings', action: 'plugin', id: 'redmineup_tags' }, caption: :tags, html: { class: 'icon' }, icon: 'tag', plugin: :redmineup_tags
 end
 
-# Hook для добавления вкладки в Project Settings
-class RedmineupTagsProjectSettingsHook < Redmine::Hook::ViewListener
-  def project_settings_tabs(context = {})
-    tabs = context[:tabs]
-    return tabs unless tabs
+# Patch for adding tab to Project Settings
+module RedmineupTags
+  module Patches
+    module ProjectsHelperPatch
+      def self.included(base)
+        base.class_eval do
+          alias_method :project_settings_tabs_without_tags, :project_settings_tabs
 
-    tabs << {
-      name: 'tags',
-      action: :plugin,
-      partial: 'tags/settings',
-      label: :tags
-    } unless tabs.any? { |tab| tab[:name] == 'tags' }
-
-    tabs
+          def project_settings_tabs
+            tabs = project_settings_tabs_without_tags
+            unless tabs.any? { |tab| tab[:name] == 'tags' }
+              tabs << {
+                name: 'tags',
+                action: :plugin,
+                partial: 'tags/settings',
+                label: :tags
+              }
+            end
+            tabs
+          end
+        end
+      end
+    end
   end
 end
 
-Redmine::Hook.add_listener(RedmineupTagsProjectSettingsHook)
+# Apply patch
+unless ProjectsHelper.included_modules.include?(RedmineupTags::Patches::ProjectsHelperPatch)
+  ProjectsHelper.include RedmineupTags::Patches::ProjectsHelperPatch
+end
 
 if Rails.configuration.respond_to?(:autoloader) && Rails.configuration.autoloader == :zeitwerk
   Rails.autoloaders.each { |loader| loader.ignore(File.dirname(__FILE__) + '/lib') }
