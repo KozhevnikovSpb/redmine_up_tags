@@ -1,91 +1,66 @@
-# This file is a part of Redmine Tags (redmine_tags) plugin,
-# customer relationship management plugin for Redmine
-#
-# Copyright (C) 2011-2026 RedmineUP
-# http://www.redmineup.com/
-#
-# redmine_tags is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# redmine_tags is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with redmine_tags.  If not, see <http://www.gnu.org/licenses/>.
-
 module RedmineupTags
   module Patches
     module IssueQueryPatch
       def self.included(base)
         base.send(:include, InstanceMethods)
-
         base.class_eval do
           alias_method :statement_without_redmine_tags, :statement
           alias_method :statement, :statement_with_redmine_tags
-
           alias_method :available_filters_without_redmine_tags, :available_filters
           alias_method :available_filters, :available_filters_with_redmine_tags
-
           alias_method :build_from_params_without_redmine_tags, :build_from_params
           alias_method :build_from_params, :build_from_params_with_redmine_tags
-
           add_available_column QueryTagsColumn.new(:tags_relations, caption: :tags)
         end
       end
 
       module InstanceMethods
         def statement_with_redmine_tags
-          filter  = filters.delete 'issue_tags'
+          filter = filters.delete('issue_tags')
           clauses = statement_without_redmine_tags || ''
+          return clauses unless filter
 
-          if filter
-            filters['issue_tags'] = filter
+          filters['issue_tags'] = filter
+          issues = Issue.all
+          operator = operator_for('issue_tags')
 
-            issues = Issue.where({})
-
-            op = operator_for('issue_tags')
-            case op
+          issues =
+            case operator
             when '=', '!'
-              issues = issues.tagged_with(values_for('issue_tags').clone, any: true)
+              issues.tagged_with(values_for('issue_tags').clone, match_all: true)
             when '!*'
-              issues = issues.joins(:tags).uniq
+              issues.joins(:tags).distinct
             else
-              issues = issues.tagged_with(Redmineup::Tag.all.map(&:to_s), any: true)
+              issues.joins(:tags).distinct
             end
 
-            compare   = op.include?('!') ? 'NOT IN' : 'IN'
-            ids_list  = issues.collect(&:id).push(0).join(',')
-
-            clauses << ' AND ' unless clauses.empty?
-            clauses << "( #{Issue.table_name}.id #{compare} (#{ids_list}) ) "
-          end
-
+          compare = operator.include?('!') ? 'NOT IN' : 'IN'
+          clauses << ' AND ' unless clauses.empty?
+          clauses << "(#{Issue.table_name}.id #{compare} (#{issues.select(:id).to_sql}))"
           clauses
+        ensure
+          filters['issue_tags'] = filter if filter
         end
 
         def available_filters_with_redmine_tags
           available_filters_without_redmine_tags
           selected_tags = []
-          begin
-            if filters['issue_tags'].present?
-              selected_tags = Issue.all_tags(project: project, open_only: RedmineupTags.settings['issues_open_only'].to_i == 1).
-                              where(name: filters['issue_tags'][:values]).map { |c| [c.name, c.name] }
-            end
-            add_available_filter('issue_tags', type: :issue_tags, name: l(:tags), values: selected_tags)
-          rescue => e
-            # Safe fallback for Redmine 7/Rails 8 - prevent breaking sidebar and custom queries
-            Rails.logger.warn "[redmine_up_tags] Tag filter error: #{e.message}"
+          if filters['issue_tags'].present?
+            selected_tags = Issue.all_tags(
+              project: project,
+              user: User.current,
+              open_only: RedmineupTags.settings['issues_open_only'].to_i == 1
+            ).where(name: filters['issue_tags'][:values]).map { |tag| [tag.name, tag.name] }
           end
+          add_available_filter('issue_tags', type: :issue_tags, name: l(:tags), values: selected_tags)
+        rescue StandardError => e
+          Rails.logger.warn("[redmineup_tags] Tag filter error: #{e.class}: #{e.message}")
         end
 
         def build_from_params_with_redmine_tags(params, defaults = {})
           build_from_params_without_redmine_tags(params, defaults)
-
-          add_filter('issue_tags', '=', [Redmineup::Tag.find_by(id: params[:tag_id]).try(:name)]) if params[:tag_id].present?
+          tag = Redmineup::Tag.find_by(id: params[:tag_id]) if params[:tag_id].present?
+          add_filter('issue_tags', '=', [tag.name]) if tag
         end
       end
     end

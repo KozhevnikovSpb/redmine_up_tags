@@ -1,48 +1,73 @@
 class TagCloud < ActiveRecord::Base
   belongs_to :project
-  belongs_to :created_by, class_name: 'User'
+  belongs_to :created_by, class_name: 'User', optional: true
+  has_many :preferences, class_name: 'TagCloudPreference', dependent: :delete_all
 
-  # Rails 8+ compatible array serialization (text column + YAML)
-  serialize :status_filter, coder: ActiveRecord::Coders::YAMLColumn.new(Array)
-  serialize :version_filter, coder: ActiveRecord::Coders::YAMLColumn.new(Array)
-  serialize :tracker_filter, coder: ActiveRecord::Coders::YAMLColumn.new(Array)
+  serialize :status_filter, coder: YAML, type: Array
+  serialize :version_filter, coder: YAML, type: Array
+  serialize :tracker_filter, coder: YAML, type: Array
 
   validates :name, presence: true, uniqueness: { scope: :project_id }
   validates :project, presence: true
+  validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate :single_system_cloud
+  validate :filters_belong_to_project
 
   default_scope { order(:position, :id) }
 
-  before_save :normalize_filters
+  before_validation :normalize_filters
 
   def is_system?
     is_system == true
   end
 
-  # Ensures there is always a system/default tag cloud for the project (auto-created on first access or project creation)
+  def visible_for?(user)
+    preference = preferences.find_by(user_id: user.id) if user&.logged?
+    preference.nil? ? visible_by_default? : preference.visible?
+  end
+
   def self.ensure_system_cloud(project)
-    return unless project
-    system_cloud = project.tag_clouds.where(is_system: true).first
-    if system_cloud.nil?
-      project.tag_clouds.create!(
-        name: I18n.t(:label_default_tag_cloud, default: 'Default Tags'),
-        visible_by_default: true,
-        is_system: true,
-        position: 0,
-        created_by: User.current
-      )
+    return unless project&.persisted?
+
+    project.with_lock do
+      project.tag_clouds.unscoped.find_or_create_by!(project_id: project.id, is_system: true) do |cloud|
+        cloud.name = I18n.t(:label_default_tag_cloud, default: 'Default Tags')
+        cloud.visible_by_default = true
+        cloud.position = 0
+        cloud.created_by = User.current if User.current&.persisted?
+      end
     end
+  rescue ActiveRecord::RecordNotUnique
+    project.tag_clouds.unscoped.find_by(project_id: project.id, is_system: true)
   end
 
   private
 
   def normalize_filters
-    [:status_filter, :version_filter, :tracker_filter].each do |attr|
-      current = self[attr]
-      if current.is_a?(Array)
-        self[attr] = current.map { |v| v.to_i }.uniq.reject(&:zero?)
-      elsif current.is_a?(String) && current.present?
-        self[attr] = current.split(/[,\s]+/).map { |v| v.to_i }.uniq.reject(&:zero?)
-      end
+    %i[status_filter version_filter tracker_filter].each do |attr|
+      values = self[attr]
+      values = values.split(/[,\s]+/) if values.is_a?(String)
+      self[attr] = Array(values).map(&:to_i).uniq.reject(&:zero?)
     end
+  end
+
+  def single_system_cloud
+    return unless is_system? && project_id
+
+    duplicate = self.class.unscoped.where(project_id: project_id, is_system: true)
+    duplicate = duplicate.where.not(id: id) if persisted?
+    errors.add(:is_system, :taken) if duplicate.exists?
+  end
+
+  def filters_belong_to_project
+    return unless project
+
+    invalid_trackers = tracker_filter - project.trackers.where(id: tracker_filter).pluck(:id)
+    invalid_versions = version_filter - project.versions.where(id: version_filter).pluck(:id)
+    invalid_statuses = status_filter - IssueStatus.where(id: status_filter).pluck(:id)
+
+    errors.add(:tracker_filter, :invalid) if invalid_trackers.any?
+    errors.add(:version_filter, :invalid) if invalid_versions.any?
+    errors.add(:status_filter, :invalid) if invalid_statuses.any?
   end
 end
