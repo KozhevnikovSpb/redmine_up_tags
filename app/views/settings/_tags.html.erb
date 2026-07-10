@@ -2,13 +2,15 @@
 
 <p><strong>Tag Clouds management is under development.</strong></p>
 
-<p>The original plugin settings are available in the main Tags tab.</p>
+<p>Original plugin settings are available in the main Tags configuration.</p>
 
-<% if defined?(@tag_clouds) && @tag_clouds %>
+<% if defined?(@tag_clouds) && @tag_clouds.any? %>
   <table class="list">
     <thead>
     <tr>
       <th>Name</th>
+      <th>Filters</th>
+      <th>Visible by Default</th>
       <th>Actions</th>
     </tr>
     </thead>
@@ -16,6 +18,8 @@
     <% @tag_clouds.each do |cloud| %>
       <tr>
         <td><%= h cloud.name %></td>
+        <td>Status: <%= cloud.status_filter || 'Any' %>, Version: <%= cloud.version_filter || 'Any' %></td>
+        <td><%= cloud.visible_by_default ? 'Yes' : 'No' %></td>
         <td>
           <% if defined?(@project) && @project %>
             <%= link_to 'Edit', edit_project_tag_cloud_path(@project, cloud) %>
@@ -25,8 +29,10 @@
     <% end %>
     </tbody>
   </table>
+<% else %>
+  <p>No tag clouds yet.</p>
 <% end %>
 
 <% if defined?(@project) && @project %>
-  <%= link_to 'New Tag Cloud', new_project_tag_cloud_path(@project), class: 'icon icon-add' %>
+  <p><%= link_to 'Create New Tag Cloud', new_project_tag_cloud_path(@project), class: 'icon icon-add' %></p>
 <% end %>
