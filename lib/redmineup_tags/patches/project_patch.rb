@@ -7,7 +7,7 @@
 # redmine_tags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# (at an option) any later version.
 #
 # redmine_tags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,12 +18,22 @@
 # along with redmine_tags.  If not, see <http://www.gnu.org/licenses/>.
 
 module RedmineupTags
-  module Hooks
-    class ViewsIssuesHook < Redmine::Hook::ViewListener
-      render_on :view_issues_show_details_bottom, partial: 'issues/tags'
-      render_on :view_issues_form_details_bottom, partial: 'issues/tags_form'
-      render_on :view_issues_sidebar_planning_bottom, partial: 'issues/tags_sidebar'
-      render_on :view_issues_bulk_edit_details_bottom, partial: 'issues/bulk_edit_tags_form'
+  module Patches
+    module ProjectPatch
+      def self.included(base)
+        base.class_eval do
+          has_many :tag_clouds, dependent: :destroy
+          after_create :ensure_default_tag_cloud
+        end
+      end
+
+      def ensure_default_tag_cloud
+        TagCloud.ensure_system_cloud(self)
+      end
     end
   end
+end
+
+unless Project.included_modules.include?(RedmineupTags::Patches::ProjectPatch)
+  Project.send(:include, RedmineupTags::Patches::ProjectPatch)
 end

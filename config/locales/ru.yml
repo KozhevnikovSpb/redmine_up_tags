@@ -41,3 +41,23 @@ ru:
 
   label_tags_remove_tags: Убрать теги
   tag_clouds: Облака тегов
+
+  # Tag Cloud management (new feature)
+  label_new_tag_cloud: Новое облако тегов
+  label_edit_tag_cloud: Редактировать облако тегов
+  label_default_tag_cloud: Облако по умолчанию
+  label_tag_cloud_name: Название
+  label_tag_cloud_filters: Фильтры
+  label_tag_cloud_status_filter: Фильтр по статусам
+  label_tag_cloud_version_filter: Фильтр по версиям
+  label_tag_cloud_tracker_filter: Фильтр по трекерам
+  label_tag_cloud_visible_by_default: Видимо по умолчанию
+  label_tag_cloud_position: Позиция
+  label_tag_cloud_system: системное
+  text_tag_cloud_filters_empty_means_all: пусто = Любые / все
+  text_tag_clouds_info: Облака тегов позволяют создавать несколько независимых аналитических представлений задач с собственными фильтрами. Системное облако сохраняет поведение оригинального плагина и не может быть удалено.
+  text_cannot_delete_system_cloud: Это защищённое системное облако (для обратной совместимости). Его можно редактировать, но нельзя удалить.
+  notice_tag_cloud_created: Облако тегов успешно создано.
+  notice_tag_cloud_updated: Облако тегов успешно обновлено.
+  notice_tag_cloud_deleted: Облако тегов успешно удалено.
+  alert_cannot_delete_system_cloud: Системное облако нельзя удалить.

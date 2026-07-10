@@ -9,7 +9,7 @@
 # redmine_tags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# (at an option) any later version.
 #
 # redmine_tags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,7 +46,7 @@ module TagsHelper
       when 'name:asc' then   tags.sort! { |a, b| a.name <=> b.name }
       when 'name:desc' then  tags.sort! { |a, b| b.name <=> a.name }
       when 'count:asc' then  tags.sort! { |a, b| a.count <=> b.count }
-      when 'count:desc' then tags.sort! { |a, b| b.count <=> a.count }
+      when 'count:desc' then tags.sort! { |a, b| b.name <=> a.name }
       # Unknown sorting option. Fallback to default one
       else
         logger.warn "[redmine_tags] Unknown sorting option: <#{sorting}>"
@@ -111,6 +111,34 @@ module TagsHelper
     options
   end
 
+  # Summary of active filters for a TagCloud (used in project settings table)
+  def tag_cloud_filters_summary(tag_cloud)
+    return '' unless tag_cloud
+    parts = []
+    if tag_cloud.status_filter.present? && tag_cloud.status_filter.any?
+      names = IssueStatus.where(id: tag_cloud.status_filter).order(:position).pluck(:name).join(', ')
+      parts << "#{I18n.t(:field_status, default: 'Status')}: #{names}"
+    else
+      parts << "#{I18n.t(:field_status, default: 'Status')}: #{I18n.t(:label_all, default: 'All')}"
+    end
+
+    if tag_cloud.version_filter.present? && tag_cloud.version_filter.any?
+      names = Version.where(id: tag_cloud.version_filter).pluck(:name).join(', ')
+      parts << "#{I18n.t(:field_fixed_version, default: 'Fixed version')}: #{names}"
+    else
+      parts << "#{I18n.t(:field_fixed_version, default: 'Fixed version')}: #{I18n.t(:label_all, default: 'All')}"
+    end
+
+    if tag_cloud.tracker_filter.present? && tag_cloud.tracker_filter.any?
+      names = Tracker.where(id: tag_cloud.tracker_filter).order(:position).pluck(:name).join(', ')
+      parts << "#{I18n.t(:field_tracker, default: 'Tracker')}: #{names}"
+    else
+      parts << "#{I18n.t(:field_tracker, default: 'Tracker')}: #{I18n.t(:label_all, default: 'All')}"
+    end
+
+    parts.join('<br />').html_safe
+  end
+
   private
 
   def add_tags(style, tags, content, item_el, options)
@@ -122,5 +150,5 @@ module TagsHelper
     end
     separator = (style == :simple_cloud) ? tag_separator : ' '
     content << safe_join(items, separator)
-  end
+    end
 end

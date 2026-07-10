@@ -7,7 +7,7 @@
 # redmine_tags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# (at an option) any later version.
 #
 # redmine_tags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -71,6 +71,7 @@ REDMINEUP_TAGS_REQUIRED_FILES = [
   'query_tags_column',
   'redmineup_tags/patches/reports_controller_patch',
   'redmineup_tags/hooks/views_reports_hook',
+  'redmineup_tags/patches/project_patch'   # NEW: for TagCloud has_many + default cloud creation
 ]
 
 if Redmine::Plugin.installed?(:redmine_agile) &&
