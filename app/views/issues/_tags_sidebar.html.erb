@@ -1,6 +1,16 @@
-<% if defined?(sidebar_tags) && !sidebar_tags.empty? %>
-  <div class="sidebar-tags">
-    <h3><%= l(:tags) %></h3>
-    <%= render_sidebar_tags if defined?(render_sidebar_tags) %>
+<!-- Multi Tag Clouds Sidebar (Redmine 7.0 compatible) -->
+<% tag_clouds = @project ? @project.tag_clouds.order(:position, :id) : [] %>
+<% tag_clouds.each do |cloud| %>
+  <div class="sidebar-tag-cloud">
+    <h3><%= cloud.name %><%= ' (system)' if cloud.is_system? %></h3>
+    <% if cloud.status_filter.present? || cloud.version_filter.present? || cloud.tracker_filter.present? %>
+      <small class="filter-info">Filters active</small>
+    <% end %>
+    <!-- Use existing tag rendering logic or simple placeholder for now -->
+    <%= render partial: 'issues/tags', locals: { issue: @issue } if defined?(@issue) %>
   </div>
+<% end %>
+
+<% if tag_clouds.empty? %>
+  <%= render partial: 'issues/tags_sidebar' rescue '' %>
 <% end %>
