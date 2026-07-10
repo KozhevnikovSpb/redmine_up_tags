@@ -27,7 +27,7 @@ TAGS_VERSION_TYPE = 'Light version'
 Redmine::Plugin.register :redmineup_tags do
   name "Redmine Tags plugin (#{TAGS_VERSION_TYPE})"
   author 'RedmineUP'
-  description 'Redmine issues tagging support'
+  description 'Redmine issues tagging support with multiple tag clouds'
   version TAGS_VERSION_NUMBER
   url 'https://www.redmineup.com/pages/plugins/tags/'
   author_url 'mailto:support@redmineup.com'
@@ -42,9 +42,9 @@ Redmine::Plugin.register :redmineup_tags do
     use_colors: 1,
     issues_sort_order: 'asc',
     tags_suggestion_order: 'name'
-  }, partial: 'tags/settings'   # ← Оставляем оригинальный partial плагина
+  }, partial: 'tags/settings'
 
-  # Добавляем permissions для Tag Clouds
+  # Permissions
   project_module :tags do
     permission :manage_tag_clouds, {
       tag_clouds: [:index, :new, :create, :edit, :update, :destroy]
@@ -54,23 +54,30 @@ Redmine::Plugin.register :redmineup_tags do
     }
   end
 
-  ProjectsHelper.module_eval do
-   def project_settings_tabs_with_tag_clouds(tabs)
-      tabs << { name: 'tags', action: :plugin, partial: 'tags/settings', label: :tags } if tabs.none? { |tab| tab[:name] == 'tags' }
-      tabs
-   end
-  end
-
   menu :admin_menu, :tags, { controller: 'settings', action: 'plugin', id: 'redmineup_tags' }, caption: :tags, html: { class: 'icon' }, icon: 'tag', plugin: :redmineup_tags
+end
 
-  project_settings_tabs = [
-    { name: 'tags', action: :plugin, partial: 'tags/settings', label: :tags }
-  ]
+# Hook для добавления вкладки в Project Settings
+class RedmineupTagsProjectSettingsHook < Redmine::Hook::ViewListener
+  def project_settings_tabs(context = {})
+    tabs = context[:tabs]
+    return tabs unless tabs
+
+    tabs << {
+      name: 'tags',
+      action: :plugin,
+      partial: 'tags/settings',
+      label: :tags
+    } unless tabs.any? { |tab| tab[:name] == 'tags' }
+
+    tabs
+  end
 end
 
 if Rails.configuration.respond_to?(:autoloader) && Rails.configuration.autoloader == :zeitwerk
   Rails.autoloaders.each { |loader| loader.ignore(File.dirname(__FILE__) + '/lib') }
 end
+
 require File.dirname(__FILE__) + '/lib/redmineup_tags'
 
 ActiveSupport.on_load(:action_view) do
