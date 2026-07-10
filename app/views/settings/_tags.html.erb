@@ -2,7 +2,9 @@
 
 <p><strong>Tag Clouds management is under development.</strong></p>
 
-<% if defined?(@tag_clouds) && @tag_clouds.present? %>
+<p>The original plugin settings are available in the main Tags tab.</p>
+
+<% if defined?(@tag_clouds) && @tag_clouds %>
   <table class="list">
     <thead>
     <tr>
@@ -13,7 +15,7 @@
     <tbody>
     <% @tag_clouds.each do |cloud| %>
       <tr>
-        <td><%=h cloud.name %></td>
+        <td><%= h cloud.name %></td>
         <td>
           <% if defined?(@project) && @project %>
             <%= link_to 'Edit', edit_project_tag_cloud_path(@project, cloud) %>
@@ -26,5 +28,5 @@
 <% end %>
 
 <% if defined?(@project) && @project %>
-  <p><%= link_to 'New Tag Cloud', new_project_tag_cloud_path(@project), class: 'icon icon-add' %></p>
+  <%= link_to 'New Tag Cloud', new_project_tag_cloud_path(@project), class: 'icon icon-add' %>
 <% end %>
