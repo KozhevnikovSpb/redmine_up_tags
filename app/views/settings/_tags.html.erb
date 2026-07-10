@@ -1,0 +1,40 @@
+<%= render partial: 'common/tabs', locals: { tabs: @tabs } if defined?(@tabs) %>
+
+<h3>Tag Clouds</h3>
+
+<table class="list issues">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Filters</th>
+    <th>Visible by Default</th>
+    <th>Position</th>
+    <th>Actions</th>
+  </tr>
+  </thead>
+  <tbody>
+  <% @tag_clouds.each do |cloud| %>
+    <tr class="<%= cloud.is_system? ? 'system-cloud' : '' %>">
+      <td><%=h cloud.name %></td>
+      <td>
+        <strong>Status:</strong> <%= cloud.status_filter.present? ? cloud.status_filter.join(', ') : 'Any' %><br>
+        <strong>Version:</strong> <%= cloud.version_filter.present? ? cloud.version_filter.join(', ') : 'Any' %><br>
+        <strong>Tracker:</strong> <%= cloud.tracker_filter.present? ? cloud.tracker_filter.join(', ') : 'Any' %>
+      </td>
+      <td align="center"><%= checked_image(cloud.visible_by_default) %></td>
+      <td><%= cloud.position %></td>
+      <td>
+        <%= link_to l(:button_edit), edit_project_tag_cloud_path(@project, cloud), class: 'icon icon-edit' %>
+        <% unless cloud.is_system? %>
+          | <%= link_to l(:button_delete), project_tag_cloud_path(@project, cloud),
+                        method: :delete,
+                        data: { confirm: l(:text_are_you_sure) },
+                        class: 'icon icon-del' %>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+
+<p><%= link_to 'New Tag Cloud', new_project_tag_cloud_path(@project), class: 'icon icon-add' %></p>

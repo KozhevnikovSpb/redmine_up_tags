@@ -49,6 +49,25 @@ Redmine::Plugin.register :redmineup_tags do
     permission :create_tags, {}
     permission :edit_tags, {}
   end
+
+  # Добавляем/расширяем вкладку Tags в настройках проекта
+  project_module :tags do
+    permission :manage_tag_clouds, {
+      tag_clouds: [:index, :new, :create, :edit, :update, :destroy]
+    }, require: :member
+    permission :select_tag_clouds, {
+      tag_clouds: [:toggle_visibility]
+    }
+  end
+
+  # Расширение вкладки Tags в Project Settings
+  settings partial: 'settings/tags',
+           default: {
+             'display_amount_of_issues' => true,
+             'display_open_issues_only' => false,
+             # ... другие существующие настройки плагина
+           }
+
 end
 
 if Rails.configuration.respond_to?(:autoloader) && Rails.configuration.autoloader == :zeitwerk
