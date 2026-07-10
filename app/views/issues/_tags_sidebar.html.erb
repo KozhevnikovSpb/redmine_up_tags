@@ -1,3 +1,19 @@
+<!-- Multi Tag Clouds Sidebar + full backward compatibility (Redmine 7.0 / Rails 8.1) -->
+<% if @project %>
+  <% tag_clouds = @project.tag_clouds.order(:position, :id) %>
+  <% tag_clouds.each do |cloud| %>
+    <div class="sidebar-tag-cloud">
+      <h3><%= cloud.name %><%= ' (system)' if cloud.is_system? %></h3>
+      <% if cloud.is_system? %>
+        <%= render_sidebar_tags if defined?(render_sidebar_tags) %>
+      <% else %>
+        <p class="info">Custom cloud (filters: active)</p>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
+
+<!-- Fallback to original single cloud / queries -->
 <% if defined?(sidebar_tags) && !sidebar_tags.empty? %>
   <div class="sidebar-tags">
     <h3><%= l(:tags) %></h3>
