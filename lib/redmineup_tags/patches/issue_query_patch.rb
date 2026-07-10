@@ -70,11 +70,16 @@ module RedmineupTags
         def available_filters_with_redmine_tags
           available_filters_without_redmine_tags
           selected_tags = []
-          if filters['issue_tags'].present?
-            selected_tags = Issue.all_tags(project: project, open_only: RedmineupTags.settings['issues_open_only'].to_i == 1).
-                            where(name: filters['issue_tags'][:values]).map { |c| [c.name, c.name] }
+          begin
+            if filters['issue_tags'].present?
+              selected_tags = Issue.all_tags(project: project, open_only: RedmineupTags.settings['issues_open_only'].to_i == 1).
+                              where(name: filters['issue_tags'][:values]).map { |c| [c.name, c.name] }
+            end
+            add_available_filter('issue_tags', type: :issue_tags, name: l(:tags), values: selected_tags)
+          rescue => e
+            # Safe fallback for Redmine 7/Rails 8 - prevent breaking sidebar and custom queries
+            Rails.logger.warn "[redmine_up_tags] Tag filter error: #{e.message}"
           end
-          add_available_filter('issue_tags', type: :list, name: l(:tags), values: selected_tags)  # Changed to :list for safety in Redmine 7/Rails 8
         end
 
         def build_from_params_with_redmine_tags(params, defaults = {})
