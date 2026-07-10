@@ -46,6 +46,7 @@ ru:
   label_new_tag_cloud: Новое облако тегов
   label_edit_tag_cloud: Редактировать облако тегов
   label_default_tag_cloud: Облако по умолчанию
+  label_hidden_tag_clouds: Скрытые облака тегов
   label_tag_cloud_name: Название
   label_tag_cloud_filters: Фильтры
   label_tag_cloud_status_filter: Фильтр по статусам
