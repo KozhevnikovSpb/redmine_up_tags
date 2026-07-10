@@ -1,24 +1,3 @@
-# encoding: utf-8
-#
-# This file is a part of Redmine Tags (redmine_tags) plugin,
-# customer relationship management plugin for Redmine
-#
-# Copyright (C) 2011-2026 RedmineUP
-# http://www.redmineup.com/
-#
-# redmine_tags is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at an option) any later version.
-#
-# redmine_tags is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with redmine_tags.  If not, see <http://www.gnu.org/licenses/>.
-
 module TagsHelper
   include Redmineup::TagsHelper
 
@@ -37,44 +16,40 @@ module TagsHelper
   end
 
   def render_tags_list(tags, options = {})
-    unless tags.nil? || tags.empty?
-      content, style = '', options.delete(:style)
+    return if tags.nil? || tags.empty?
 
-      tags = tags.all.to_a if tags.respond_to?(:all)
+    content = +''
+    style = options.delete(:style)
+    tags = tags.to_a
 
-      case sorting = "#{RedmineupTags.settings['issues_sort_by']}:#{RedmineupTags.settings['issues_sort_order']}"
-      when 'name:asc' then   tags.sort! { |a, b| a.name <=> b.name }
-      when 'name:desc' then  tags.sort! { |a, b| b.name <=> a.name }
-      when 'count:asc' then  tags.sort! { |a, b| a.count <=> b.count }
-      when 'count:desc' then tags.sort! { |a, b| b.name <=> a.name }
-      # Unknown sorting option. Fallback to default one
-      else
-        logger.warn "[redmine_tags] Unknown sorting option: <#{sorting}>"
-        tags.sort! { |a, b| a.name <=> b.name }
-      end
-
-      if style == :list
-        list_el, item_el = 'ul', 'li'
-      elsif style == :simple_cloud
-        list_el, item_el = 'div', 'span'
-      elsif style == :cloud
-        list_el, item_el = 'div', 'span'
-      else
-        raise 'Unknown list style'
-      end
-
-      content = content.html_safe
-      if style == :list && RedmineupTags.settings['issues_sort_by'] == 'name'
-        tags.group_by { |tag| tag.name.downcase.first }.each do |letter, grouped_tags|
-          content << content_tag(item_el, letter.upcase, class: 'letter', :style => '')
-          add_tags(style, grouped_tags, content, item_el, options)
-        end
-      else
-        add_tags(style, tags, content, item_el, options)
-      end
-
-      content_tag(list_el, content, class: 'tags-cloud', style: (style == :simple_cloud ? 'text-align: left;' : ''))
+    case sorting = "#{RedmineupTags.settings['issues_sort_by']}:#{RedmineupTags.settings['issues_sort_order']}"
+    when 'name:asc' then tags.sort_by! { |tag| tag.name.to_s.downcase }
+    when 'name:desc' then tags.sort_by! { |tag| tag.name.to_s.downcase }.reverse!
+    when 'count:asc' then tags.sort_by! { |tag| tag.count.to_i }
+    when 'count:desc' then tags.sort_by! { |tag| tag.count.to_i }.reverse!
+    else
+      logger.warn "[redmine_tags] Unknown sorting option: <#{sorting}>"
+      tags.sort_by! { |tag| tag.name.to_s.downcase }
     end
+
+    list_el, item_el =
+      case style
+      when :list then %w[ul li]
+      when :simple_cloud, :cloud then %w[div span]
+      else raise 'Unknown list style'
+      end
+
+    content = content.html_safe
+    if style == :list && RedmineupTags.settings['issues_sort_by'] == 'name'
+      tags.group_by { |tag| tag.name.to_s.downcase.first || '#' }.each do |letter, grouped_tags|
+        content << content_tag(item_el, letter.upcase, class: 'letter', style: '')
+        add_tags(style, grouped_tags, content, item_el, options)
+      end
+    else
+      add_tags(style, tags, content, item_el, options)
+    end
+
+    content_tag(list_el, content, class: 'tags-cloud', style: (style == :simple_cloud ? 'text-align: left;' : ''))
   end
 
   def link_to_issue_filter(title, filters, options = {})
@@ -82,15 +57,6 @@ module TagsHelper
     link_to title, options
   end
 
-  # returns hash suitable for passing it to the <tt>to_link</tt>
-  # === parameters
-  # * <i>filters</i> = array of arrays. each child array is an array of strings:
-  #                    name, operator and value
-  # === example
-  # link_to 'foobar', link_to_issue_filter_options [[ :tags, '~', 'foobar' ]]
-  #
-  # filters = [[ :tags, '~', 'bazbaz' ], [:status_id, 'o']]
-  # link_to 'bazbaz', link_to_issue_filter_options filters
   def link_to_issue_filter_options(filters)
     options = {
       controller: 'issues',
@@ -101,45 +67,29 @@ module TagsHelper
       operators: {}
     }
 
-    filters.each do |f|
-      name, operator, value = f
-      options[:fields].push(name)
+    filters.each do |name, operator, value|
+      options[:fields] << name
       options[:operators][name] = operator
       options[:values][name] = [value]
     end
-
     options
   end
 
-  # Summary of active filters for a TagCloud (used in project settings table)
   def tag_cloud_filters_summary(tag_cloud)
     return '' unless tag_cloud
+
     parts = []
-    if tag_cloud.status_filter.present? && tag_cloud.status_filter.any?
-      names = IssueStatus.where(id: tag_cloud.status_filter).order(:position).pluck(:name).join(', ')
-      parts << "#{I18n.t(:field_status, default: 'Status')}: #{names}"
-    else
-      parts << "#{I18n.t(:field_status, default: 'Status')}: #{I18n.t(:label_all, default: 'All')}"
-    end
-
-    if tag_cloud.version_filter.present? && tag_cloud.version_filter.any?
-      names = Version.where(id: tag_cloud.version_filter).pluck(:name).join(', ')
-      parts << "#{I18n.t(:field_fixed_version, default: 'Fixed version')}: #{names}"
-    else
-      parts << "#{I18n.t(:field_fixed_version, default: 'Fixed version')}: #{I18n.t(:label_all, default: 'All')}"
-    end
-
-    if tag_cloud.tracker_filter.present? && tag_cloud.tracker_filter.any?
-      names = Tracker.where(id: tag_cloud.tracker_filter).order(:position).pluck(:name).join(', ')
-      parts << "#{I18n.t(:field_tracker, default: 'Tracker')}: #{names}"
-    else
-      parts << "#{I18n.t(:field_tracker, default: 'Tracker')}: #{I18n.t(:label_all, default: 'All')}"
-    end
-
-    parts.join('<br />').html_safe
+    parts << filter_summary(:field_status, IssueStatus.where(id: tag_cloud.status_filter).sorted.pluck(:name))
+    parts << filter_summary(:field_fixed_version, Version.where(id: tag_cloud.version_filter).pluck(:name))
+    parts << filter_summary(:field_tracker, Tracker.where(id: tag_cloud.tracker_filter).sorted.pluck(:name))
+    safe_join(parts, tag.br)
   end
 
   private
+
+  def filter_summary(label, values)
+    content_tag(:span, "#{l(label)}: #{values.presence&.join(', ') || l(:label_all)}")
+  end
 
   def add_tags(style, tags, content, item_el, options)
     items = []
@@ -148,7 +98,7 @@ module TagsHelper
                            class: "tag-nube-#{weight}",
                            style: (style == :simple_cloud ? 'font-size: 1em;' : ''))
     end
-    separator = (style == :simple_cloud) ? tag_separator : ' '
+    separator = style == :simple_cloud ? tag_separator : ' '
     content << safe_join(items, separator)
-    end
+  end
 end
