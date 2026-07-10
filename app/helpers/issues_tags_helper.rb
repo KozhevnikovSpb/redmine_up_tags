@@ -45,6 +45,9 @@ module IssuesTagsHelper
 
     clouds = TagCloud.unscoped.where(project_id: @project.id).order(:position, :id).to_a
     system_cloud = clouds.detect(&:is_system?)
+    custom_clouds = clouds.reject(&:is_system?)
+    can_select_clouds = User.current.allowed_to?(:select_tag_clouds, @project)
+    visible_clouds, hidden_clouds = custom_clouds.partition { |cloud| cloud.visible_for?(User.current) }
     sections = []
 
     if system_cloud.nil? || system_cloud.visible_for?(User.current)
@@ -55,11 +58,9 @@ module IssuesTagsHelper
       )
     end
 
-    clouds.reject(&:is_system?).each do |cloud|
-      next unless cloud.visible_for?(User.current)
-
+    visible_clouds.each do |cloud|
       extra = nil
-      if User.current.allowed_to?(:select_tag_clouds, @project)
+      if can_select_clouds
         extra = content_tag(:p, class: 'small') do
           link_to(
             l(:button_hide),
@@ -79,6 +80,8 @@ module IssuesTagsHelper
       )
     end
 
+    sections << hidden_tag_clouds_section(hidden_clouds) if can_select_clouds && hidden_clouds.any?
+
     safe_join(sections)
   rescue StandardError => e
     log_tag_sidebar_error(e, 'sidebar')
@@ -97,6 +100,29 @@ module IssuesTagsHelper
         body,
         extra
       ].compact)
+    end
+  end
+
+  def hidden_tag_clouds_section(clouds)
+    items = clouds.map do |cloud|
+      content_tag(:li, data: { tag_cloud_id: cloud.id }) do
+        safe_join([
+          content_tag(:span, cloud.name),
+          link_to(
+            l(:button_show),
+            toggle_project_tag_cloud_preference_path(@project, cloud),
+            method: :post,
+            class: 'icon icon-add'
+          )
+        ], ' ')
+      end
+    end
+
+    content_tag(:div, class: 'sidebar-tag-cloud sidebar-tag-cloud-hidden') do
+      safe_join([
+        content_tag(:h3, l(:label_hidden_tag_clouds)),
+        content_tag(:ul, safe_join(items))
+      ])
     end
   end
 
