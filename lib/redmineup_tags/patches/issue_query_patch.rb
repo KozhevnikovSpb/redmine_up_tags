@@ -36,7 +36,7 @@ module RedmineupTags
 
           compare = operator.include?('!') ? 'NOT IN' : 'IN'
           clauses << ' AND ' unless clauses.empty?
-          clauses << "(#{Issue.table_name}.id #{compare} (#{issues.select(:id).to_sql}))"
+          clauses << "(#{Issue.table_name}.id #{compare} (#{tagged_issue_ids_sql(issues)}))"
           clauses
         ensure
           filters['issue_tags'] = filter if filter
@@ -61,6 +61,23 @@ module RedmineupTags
           tag = Redmineup::Tag.find_by(id: params[:tag_id]) if params[:tag_id].present?
           add_filter('issue_tags', '=', [tag.name]) if tag
           self
+        end
+
+        private
+
+        # RedmineUP's taggable implementation returns an Array from tagged_with,
+        # while joins(:tags) returns an ActiveRecord relation. Build a valid SQL
+        # subquery/list for both cases without calling Array#select(:id).
+        def tagged_issue_ids_sql(issues)
+          if issues.respond_to?(:reselect) && issues.respond_to?(:to_sql)
+            return issues.reselect("#{Issue.table_name}.id").to_sql
+          end
+
+          ids = Array(issues).filter_map do |issue|
+            issue.respond_to?(:id) ? issue.id : issue
+          end.map(&:to_i).uniq
+
+          (ids.presence || [0]).join(',')
         end
       end
     end
