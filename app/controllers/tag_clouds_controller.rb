@@ -1,5 +1,5 @@
 class TagCloudsController < ApplicationController
-  before_action :find_project_by_project_id
+  before_action :find_project_by_project_id   # ← Это обязательно!
   before_action :authorize, except: [:toggle_visibility]
 
   def index
