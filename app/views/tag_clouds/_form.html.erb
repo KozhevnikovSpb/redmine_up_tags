@@ -55,5 +55,5 @@
 
 <p class="buttons">
   <%= f.submit @tag_cloud.new_record? ? l(:button_create) : l(:button_save), class: 'button' %>
-  <%= link_to l(:button_cancel), project_settings_path(@project, tab: 'tags'), class: 'button' %>
+  <%= link_to l(:button_cancel), { controller: 'projects', action: 'settings', id: @project, tab: 'tags' }, class: 'button' %>
 </p>
