@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with redmine_tags.  If not, see <http://www.gnu.org/licenses/>.
 
-class CreateTags < ActiveRecord::Migration[4.2]
+class CreateTags < ActiveRecord::Migration[7.0]
 
   def self.up
     ActiveRecord::Base.create_taggable_table
