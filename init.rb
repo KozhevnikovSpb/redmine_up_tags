@@ -42,7 +42,7 @@ Redmine::Plugin.register :redmineup_tags do
     use_colors: 1,
     issues_sort_order: 'asc',
     tags_suggestion_order: 'name'
-  }, partial: 'projects/settings/tags'
+  }, partial: false
 
   # Permissions for Tag Clouds
   project_module :tags do
