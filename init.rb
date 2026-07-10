@@ -74,6 +74,8 @@ class RedmineupTagsProjectSettingsHook < Redmine::Hook::ViewListener
   end
 end
 
+Redmine::Hook.add_listener(RedmineupTagsProjectSettingsHook)
+
 if Rails.configuration.respond_to?(:autoloader) && Rails.configuration.autoloader == :zeitwerk
   Rails.autoloaders.each { |loader| loader.ignore(File.dirname(__FILE__) + '/lib') }
 end

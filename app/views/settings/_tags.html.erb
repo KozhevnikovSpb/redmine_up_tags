@@ -1,4 +1,24 @@
 <h3>Tag Clouds</h3>
 
-<p><strong>Tag Clouds management tab is active.</strong></p>
-<p>This section will allow creating multiple tag clouds per project.</p>
+<p><strong>Tag Clouds management is under development.</strong></p>
+
+<% if @tag_clouds %>
+  <table class="list">
+    <thead>
+    <tr>
+      <th>Name</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% @tag_clouds.each do |cloud| %>
+      <tr>
+        <td><%=h cloud.name %></td>
+        <td><%= link_to 'Edit', edit_project_tag_cloud_path(@project, cloud) if @project %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<%= link_to 'New Tag Cloud', new_project_tag_cloud_path(@project), class: 'icon icon-add' if @project %>
