@@ -117,23 +117,23 @@ module TagsHelper
     parts = []
     if tag_cloud.status_filter.present? && tag_cloud.status_filter.any?
       names = IssueStatus.where(id: tag_cloud.status_filter).order(:position).pluck(:name).join(', ')
-      parts << "#{l(:field_status, default: 'Status')}: #{names}"
+      parts << "#{I18n.t(:field_status, default: 'Status')}: #{names}"
     else
-      parts << "#{l(:field_status, default: 'Status')}: #{l(:label_all, default: 'All')}"
+      parts << "#{I18n.t(:field_status, default: 'Status')}: #{I18n.t(:label_all, default: 'All')}"
     end
 
     if tag_cloud.version_filter.present? && tag_cloud.version_filter.any?
       names = Version.where(id: tag_cloud.version_filter).pluck(:name).join(', ')
-      parts << "#{l(:field_fixed_version, default: 'Fixed version')}: #{names}"
+      parts << "#{I18n.t(:field_fixed_version, default: 'Fixed version')}: #{names}"
     else
-      parts << "#{l(:field_fixed_version, default: 'Fixed version')}: #{l(:label_all, default: 'All')}"
+      parts << "#{I18n.t(:field_fixed_version, default: 'Fixed version')}: #{I18n.t(:label_all, default: 'All')}"
     end
 
     if tag_cloud.tracker_filter.present? && tag_cloud.tracker_filter.any?
       names = Tracker.where(id: tag_cloud.tracker_filter).order(:position).pluck(:name).join(', ')
-      parts << "#{l(:field_tracker, default: 'Tracker')}: #{names}"
+      parts << "#{I18n.t(:field_tracker, default: 'Tracker')}: #{names}"
     else
-      parts << "#{l(:field_tracker, default: 'Tracker')}: #{l(:label_all, default: 'All')}"
+      parts << "#{I18n.t(:field_tracker, default: 'Tracker')}: #{I18n.t(:label_all, default: 'All')}"
     end
 
     parts.join('<br />').html_safe
@@ -150,5 +150,5 @@ module TagsHelper
     end
     separator = (style == :simple_cloud) ? tag_separator : ' '
     content << safe_join(items, separator)
-  end
+    end
 end

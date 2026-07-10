@@ -17,8 +17,8 @@
       </tr>
     </thead>
     <tbody>
-      <% @tag_clouds.each do |cloud| %>
-        <tr class="<%= cycle('odd', 'even') %><%= ' system' if cloud.is_system? %>">
+      <% @tag_clouds.each_with_index do |cloud, idx| %>
+        <tr class="<%= idx.even? ? 'even' : 'odd' %><%= ' system' if cloud.is_system? %>">
           <td>
             <%= cloud.name %>
             <% if cloud.is_system? %>
@@ -26,7 +26,7 @@
             <% end %>
           </td>
           <td><%= tag_cloud_filters_summary(cloud) %></td>
-          <td><%= checked_image(cloud.visible_by_default) %></td>
+          <td><%= cloud.visible_by_default ? '✓' : '—' %></td>
           <td><%= cloud.position %></td>
           <td class="actions">
             <%= link_to l(:button_edit), edit_project_tag_cloud_path(@project, cloud), class: 'icon icon-edit' %>
