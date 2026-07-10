@@ -3,16 +3,21 @@ module IssuesTagsHelper
     return @sidebar_tags if defined?(@sidebar_tags)
 
     @sidebar_tags = []
-    return @sidebar_tags unless @project && RedmineupTags.tag_list_view != :none
+    return @sidebar_tags if RedmineupTags.tag_list_view == :none
 
-    projects = [@project]
-    projects.concat(@project.descendants.to_a) if Setting.display_subprojects_issues?
+    projects = []
+    if @project
+      projects << @project
+      projects.concat(@project.descendants.to_a) if Setting.display_subprojects_issues?
+    end
 
-    @sidebar_tags = Issue.all_tags(
-      projects: projects,
+    options = {
       user: User.current,
       open_only: RedmineupTags.settings['issues_open_only'].to_i == 1
-    ).to_a
+    }
+    options[:projects] = projects if projects.any?
+
+    @sidebar_tags = Issue.all_tags(options).to_a
   rescue StandardError => e
     log_tag_sidebar_error(e, 'system cloud tags')
     @sidebar_tags = []
@@ -41,7 +46,8 @@ module IssuesTagsHelper
   end
 
   def render_tags_sidebar
-    return ''.html_safe unless @project && RedmineupTags.tag_list_view != :none
+    return ''.html_safe if RedmineupTags.tag_list_view == :none
+    return render_global_tags_sidebar unless @project
 
     clouds = TagCloud.unscoped.where(project_id: @project.id).order(:position, :id).to_a
     system_cloud = clouds.detect(&:is_system?)
@@ -89,6 +95,14 @@ module IssuesTagsHelper
   end
 
   private
+
+  def render_global_tags_sidebar
+    tag_cloud_section(
+      l(:tags),
+      render_sidebar_tags,
+      'sidebar-tag-cloud sidebar-tag-cloud-system sidebar-tag-cloud-global'
+    )
+  end
 
   def tag_cloud_section(title, body, css_class, data: nil, extra: nil)
     options = { class: css_class }
