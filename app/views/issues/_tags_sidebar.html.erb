@@ -1,16 +1,27 @@
-<!-- Safe sidebar for tags - restores original behavior and adds multi-cloud structure -->
-<% if defined?(render_sidebar_tags) %>
-  <%= render_sidebar_tags %>
-<% end %>
+<% if RedmineupTags.tag_list_view != :none %>
+  <% clouds = @project ? @project.tag_clouds.unscoped.order(:position, :id).to_a : [] %>
+  <% system_cloud = clouds.detect(&:is_system?) %>
 
-<!-- Multi cloud placeholder - will be expanded with Aggregator in next stage -->
-<% if @project && @project.tag_clouds.any? %>
-  <% @project.tag_clouds.order(:position).each do |cloud| %>
-    <% if !cloud.is_system? %>
-      <div class="sidebar-tag-cloud">
-        <h3><%= cloud.name %></h3>
-        <p class="info">Custom cloud tags (to be implemented with full aggregator)</p>
-      </div>
-    <% end %>
+  <% if system_cloud.nil? || system_cloud.visible_for?(User.current) %>
+    <div class="sidebar-tag-cloud sidebar-tag-cloud-system">
+      <h3><%= system_cloud&.name || l(:tags) %></h3>
+      <%= render_sidebar_tags if defined?(render_sidebar_tags) %>
+    </div>
+  <% end %>
+
+  <% clouds.reject(&:is_system?).each do |cloud| %>
+    <% next unless cloud.visible_for?(User.current) %>
+    <div class="sidebar-tag-cloud" data-tag-cloud-id="<%= cloud.id %>">
+      <h3><%= h(cloud.name) %></h3>
+      <%= render_tag_cloud(cloud) %>
+      <% if User.current.allowed_to?(:select_tag_clouds, @project) %>
+        <p class="small">
+          <%= link_to l(:button_hide),
+                      toggle_project_tag_cloud_preference_path(@project, cloud),
+                      method: :post,
+                      class: 'icon icon-close' %>
+        </p>
+      <% end %>
+    </div>
   <% end %>
 <% end %>
