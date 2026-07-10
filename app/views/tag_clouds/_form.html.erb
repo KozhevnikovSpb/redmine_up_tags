@@ -1,0 +1,61 @@
+<%= f.error_messages %>
+
+<div class="box">
+  <p>
+    <%= f.label :name, l(:label_tag_cloud_name, default: 'Name') %>
+    <%= f.text_field :name, required: true, size: 60 %>
+  </p>
+
+  <fieldset>
+    <legend>
+      <%= l(:label_tag_cloud_filters, default: 'Filters') %>
+      <span class="info">(<%= l(:text_tag_cloud_filters_empty_means_all, default: 'empty = Any / all items') %>)</span>
+    </legend>
+
+    <p>
+      <%= f.label :status_filter, l(:label_tag_cloud_status_filter, default: 'Status filter') %>
+      <%= f.select :status_filter,
+                   @statuses.map { |s| [s.name, s.id] },
+                   { selected: (@tag_cloud.status_filter || []).map(&:to_i) },
+                   { multiple: true, size: 6, class: 'select2' } %>
+    </p>
+
+    <p>
+      <%= f.label :version_filter, l(:label_tag_cloud_version_filter, default: 'Version filter') %>
+      <%= f.select :version_filter,
+                   @versions.map { |v| [v.name, v.id] },
+                   { selected: (@tag_cloud.version_filter || []).map(&:to_i) },
+                   { multiple: true, size: 6, class: 'select2' } %>
+    </p>
+
+    <p>
+      <%= f.label :tracker_filter, l(:label_tag_cloud_tracker_filter, default: 'Tracker filter') %>
+      <%= f.select :tracker_filter,
+                   @trackers.map { |t| [t.name, t.id] },
+                   { selected: (@tag_cloud.tracker_filter || []).map(&:to_i) },
+                   { multiple: true, size: 6, class: 'select2' } %>
+    </p>
+  </fieldset>
+
+  <p>
+    <%= f.label :visible_by_default, l(:label_tag_cloud_visible_by_default, default: 'Visible by default') %>
+    <%= f.check_box :visible_by_default %>
+  </p>
+
+  <p>
+    <%= f.label :position, l(:label_tag_cloud_position, default: 'Position') %>
+    <%= f.text_field :position, size: 5 %>
+  </p>
+
+  <% if @tag_cloud.persisted? && @tag_cloud.is_system? %>
+    <p class="info">
+      <strong><%= l(:label_tag_cloud_system, default: 'System cloud') %></strong>.
+      <%= l(:text_cannot_delete_system_cloud, default: 'This cloud cannot be deleted but can be edited.') %>
+    </p>
+  <% end %>
+</div>
+
+<p class="buttons">
+  <%= f.submit @tag_cloud.new_record? ? l(:button_create) : l(:button_save), class: 'button' %>
+  <%= link_to l(:button_cancel), project_settings_path(@project, tab: 'tags'), class: 'button' %>
+</p>

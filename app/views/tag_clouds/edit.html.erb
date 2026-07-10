@@ -1,0 +1,9 @@
+<h2><%= l(:label_edit_tag_cloud, default: 'Edit Tag Cloud') %></h2>
+
+<%= form_for [@project, @tag_cloud], html: { class: 'tabular' } do |f| %>
+  <%= render partial: 'form', locals: { f: f } %>
+<% end %>
+
+<% content_for :sidebar do %>
+  <%= render partial: 'tags/sidebar' rescue nil %>
+<% end %>
