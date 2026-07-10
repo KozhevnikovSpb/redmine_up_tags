@@ -1,5 +1,7 @@
 <h2><%= l(:label_edit_tag_cloud, default: 'Edit Tag Cloud') %></h2>
 
+<%= error_messages_for @tag_cloud %>
+
 <%= form_for [@project, @tag_cloud], html: { class: 'tabular' } do |f| %>
   <%= render partial: 'form', locals: { f: f } %>
 <% end %>

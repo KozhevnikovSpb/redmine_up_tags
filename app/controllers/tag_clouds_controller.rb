@@ -60,7 +60,7 @@ class TagCloudsController < ApplicationController
   end
 
   def load_filter_options
-    @statuses = IssueStatus.sorted
+    @statuses = IssueStatus.order(:position)
     @trackers = @project.trackers.order(:position)
     @versions = @project.versions.order(:effective_date, :name)
   end
