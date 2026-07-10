@@ -22,10 +22,12 @@ module RedmineupTags
     class ViewsIssuesHook < Redmine::Hook::ViewListener
       render_on :view_issues_show_details_bottom, partial: 'issues/tags'
       render_on :view_issues_form_details_bottom, partial: 'issues/tags_form'
-      # Redmine 7 renders the issue sidebar through issues/_sidebar.html.erb.
-      # Put tag clouds after native saved queries so a tag-cloud failure can
-      # never suppress the standard Redmine query list.
-      render_on :view_issues_sidebar_queries_bottom, partial: 'issues/tags_sidebar'
+
+      # In Redmine 7.0 the native saved-query list is rendered immediately
+      # after this hook. Keeping tag clouds here ensures that the plugin never
+      # replaces or consumes the output of render_sidebar_queries.
+      render_on :view_issues_sidebar_planning_bottom, partial: 'issues/tags_sidebar'
+
       render_on :view_issues_bulk_edit_details_bottom, partial: 'issues/bulk_edit_tags_form'
     end
   end
