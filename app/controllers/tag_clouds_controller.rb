@@ -1,6 +1,6 @@
 class TagCloudsController < ApplicationController
   before_action :find_project_by_project_id   # ← Это обязательно!
-  #before_action :authorize, except: [:toggle_visibility]
+  before_action :authorize, except: [:toggle_visibility]
 
   def index
     @tag_clouds = @project.tag_clouds.order(:position, :id)
