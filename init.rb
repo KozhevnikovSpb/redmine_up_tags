@@ -54,7 +54,18 @@ Redmine::Plugin.register :redmineup_tags do
     }
   end
 
+  ProjectsHelper.module_eval do
+   def project_settings_tabs_with_tag_clouds(tabs)
+      tabs << { name: 'tags', action: :plugin, partial: 'tags/settings', label: :tags } if tabs.none? { |tab| tab[:name] == 'tags' }
+      tabs
+   end
+  end
+
   menu :admin_menu, :tags, { controller: 'settings', action: 'plugin', id: 'redmineup_tags' }, caption: :tags, html: { class: 'icon' }, icon: 'tag', plugin: :redmineup_tags
+
+  project_settings_tabs = [
+    { name: 'tags', action: :plugin, partial: 'tags/settings', label: :tags }
+  ]
 end
 
 if Rails.configuration.respond_to?(:autoloader) && Rails.configuration.autoloader == :zeitwerk
